@@ -1,4 +1,5 @@
 import { localeFor, translate } from "./i18nCore.js";
+import { isDirectBreastfeeding, measurableFeedingAmount } from "./feedings.js";
 
 export function getAge(birthDate, language = "fr") {
   const birth = new Date(birthDate);
@@ -63,7 +64,7 @@ export function applyMilkWasteToFeedings(feedings = [], milkWaste = []) {
     _originalEntry: entry,
     _originalAmount: entry.amount,
     _milkWasteAmount: 0,
-    amount: entry.amount == null ? entry.amount : Number(entry.amount || 0),
+    amount: isDirectBreastfeeding(entry) ? null : (entry.amount == null ? entry.amount : Number(entry.amount || 0)),
   }));
 
   const wasteEntries = milkWaste
@@ -116,13 +117,14 @@ export function toFeedingTimeline(feedings, volumeUnit = "mL", language = "fr") 
 
   const formatAmount = (amount) => typeof volumeUnit === "function" ? volumeUnit(amount) : `${amount} ${volumeUnit}`;
   return feedings.map((f) => {
-    const hasAmount = f.amount != null || f._originalAmount != null;
+    const amount = measurableFeedingAmount(f);
+    const hasAmount = !isDirectBreastfeeding(f) && (f.amount != null || f._originalAmount != null);
     const wasteLabel = Number(f._milkWasteAmount || 0) > 0 ? ` · ${translate("feeding.wasteSuffix", { amount: formatAmount(f._milkWasteAmount) }, language)}` : "";
     return {
       time: formatTime(f.end || f.start, language),
-      label: `${hasAmount ? formatAmount(Number(f.amount || 0)) : ""} ${methodLabels[f.method] || typeLabels[f.type] || f.method || f.type || ""}${wasteLabel}`.trim() || translate("activity.feeding", {}, language),
+      label: `${hasAmount ? formatAmount(amount) : ""} ${methodLabels[f.method] || typeLabels[f.type] || f.method || f.type || ""}${wasteLabel}`.trim() || translate("activity.feeding", {}, language),
       detail: timeAgo(f.end || f.start, language),
-      amount: f.amount || 0,
+      amount,
       type: f.type,
       method: f.method,
       entry: f._originalEntry || f,
@@ -240,11 +242,11 @@ export function aggregateByPeriod(entries, kind, period = "week", subtractEntrie
   const subtractions = Array.isArray(subtractEntries) ? subtractEntries : [];
   if (period === "all") {
     const keys = [...new Set([...source, ...subtractions].map((e) => entryDateStr(e.start || e.time || e.date)).filter(Boolean))].sort();
-    return keys.map((key) => ({ day: new Date(`${key}T12:00:00`).toLocaleDateString(localeFor(language), { day: "2-digit", month: "short" }), dateKey: key, amount: Math.max(0, source.filter((e) => entryDateStr(e.start || e.time || e.date) === key).reduce((s, e) => s + Number(e.amount || 0), 0) - subtractions.filter((e) => entryDateStr(e.start || e.time || e.date) === key).reduce((s, e) => s + Number(e.amount || 0), 0)), hours: source.filter((e) => entryDateStr(e.start || e.time || e.date) === key).reduce((s, e) => s + parseDuration(e.duration), 0), minutes: source.filter((e) => entryDateStr(e.start || e.time || e.date) === key).reduce((s, e) => s + parseDuration(e.duration) * 60, 0) }));
+    return keys.map((key) => ({ day: new Date(`${key}T12:00:00`).toLocaleDateString(localeFor(language), { day: "2-digit", month: "short" }), dateKey: key, amount: Math.max(0, source.filter((e) => entryDateStr(e.start || e.time || e.date) === key).reduce((s, e) => s + measurableFeedingAmount(e), 0) - subtractions.filter((e) => entryDateStr(e.start || e.time || e.date) === key).reduce((s, e) => s + Number(e.amount || 0), 0)), hours: source.filter((e) => entryDateStr(e.start || e.time || e.date) === key).reduce((s, e) => s + parseDuration(e.duration), 0), minutes: source.filter((e) => entryDateStr(e.start || e.time || e.date) === key).reduce((s, e) => s + parseDuration(e.duration) * 60, 0) }));
   }
   const result = getLastNDays(days, language);
   const sums = Object.fromEntries(result.map((d) => [d.dateStr, { amount: 0, hours: 0, minutes: 0 }]));
-  source.forEach((e) => { const key = entryDateStr(e.start || e.time || e.date); if (!sums[key]) return; sums[key].amount += Number(e.amount || 0); sums[key].hours += parseDuration(e.duration); sums[key].minutes += parseDuration(e.duration) * 60; });
+  source.forEach((e) => { const key = entryDateStr(e.start || e.time || e.date); if (!sums[key]) return; sums[key].amount += measurableFeedingAmount(e); sums[key].hours += parseDuration(e.duration); sums[key].minutes += parseDuration(e.duration) * 60; });
   subtractions.forEach((e) => { const key = entryDateStr(e.start || e.time || e.date); if (sums[key]) sums[key].amount -= Number(e.amount || 0); });
   return result.map((d) => ({ day: d.label, dateKey: d.dateStr, amount: Math.max(0, Math.round(sums[d.dateStr].amount)), hours: Math.round(sums[d.dateStr].hours * 10) / 10, minutes: Math.round(sums[d.dateStr].minutes) }));
 }
@@ -269,7 +271,7 @@ export function dailyFeedingTotals(entries, numDays = 30, subtractEntries = [], 
     const sums = new Map();
     entries.forEach((entry) => {
       const key = entryDateStr(entry.start || entry.time || entry.date);
-      sums.set(key, (sums.get(key) || 0) + parseFloat(entry.amount || 0));
+      sums.set(key, (sums.get(key) || 0) + measurableFeedingAmount(entry));
     });
     subtractEntries.forEach((entry) => {
       const key = entryDateStr(entry.time || entry.start || entry.date);
@@ -288,7 +290,7 @@ export function dailyFeedingTotals(entries, numDays = 30, subtractEntries = [], 
   days.forEach((d) => (sums[d.dateStr] = 0));
   entries.forEach((e) => {
     const key = entryDateStr(e.start || e.time || e.date);
-    if (key in sums) sums[key] += parseFloat(e.amount || 0);
+    if (key in sums) sums[key] += measurableFeedingAmount(e);
   });
   subtractEntries.forEach((e) => {
     const key = entryDateStr(e.time || e.start || e.date);
@@ -297,6 +299,43 @@ export function dailyFeedingTotals(entries, numDays = 30, subtractEntries = [], 
   const result = days.map((d) => ({ date: d.label, dateKey: d.dateStr, amount: Math.max(0, Math.round(sums[d.dateStr])) }));
   const firstNonZero = result.findIndex((d) => d.amount > 0);
   return firstNonZero > 0 ? result.slice(firstNonZero) : result;
+}
+
+export function dailyFeedingGrowthTotals(entries, numDays = 30, language = "fr") {
+  const addEntry = (totals, entry) => {
+    const key = entryDateStr(entry.start || entry.time || entry.date);
+    if (!key || !totals.has(key)) return;
+    const current = totals.get(key);
+    current.amount += measurableFeedingAmount(entry);
+    if (isDirectBreastfeeding(entry)) current.directCount += 1;
+  };
+
+  if (numDays == null) {
+    const keys = [...new Set(entries
+      .map((entry) => entryDateStr(entry.start || entry.time || entry.date))
+      .filter(Boolean))]
+      .sort();
+    const totals = new Map(keys.map((key) => [key, { amount: 0, directCount: 0 }]));
+    entries.forEach((entry) => addEntry(totals, entry));
+    return [...totals.entries()].map(([key, values]) => ({
+      date: new Date(`${key}T12:00:00`).toLocaleDateString(localeFor(language), { month: "short", day: "numeric" }),
+      dateKey: key,
+      amount: Math.max(0, Math.round(values.amount)),
+      directCount: values.directCount,
+    }));
+  }
+
+  const days = getLastNDays(numDays, language);
+  const totals = new Map(days.map((day) => [day.dateStr, { amount: 0, directCount: 0 }]));
+  entries.forEach((entry) => addEntry(totals, entry));
+  const result = days.map((day) => ({
+    date: day.label,
+    dateKey: day.dateStr,
+    amount: Math.max(0, Math.round(totals.get(day.dateStr).amount)),
+    directCount: totals.get(day.dateStr).directCount,
+  }));
+  const firstActivity = result.findIndex((day) => day.amount > 0 || day.directCount > 0);
+  return firstActivity > 0 ? result.slice(firstActivity) : result;
 }
 
 export function getEntriesForDay(entries, dayLabel, dateKey = "start") {
