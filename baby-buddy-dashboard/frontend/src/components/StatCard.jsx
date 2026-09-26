@@ -1,4 +1,4 @@
-export default function StatCard({ icon, label, value, sub, color, accent }) {
+export default function StatCard({ icon, label, value, sub, color, accent, ago }) {
   return (
     <div
       style={{
@@ -67,6 +67,11 @@ export default function StatCard({ icon, label, value, sub, color, accent }) {
       {sub && (
         <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: -2, textTransform: "capitalize" }}>
           {sub}
+        </div>
+      )}
+      {ago && (
+        <div style={{ fontSize: 12, color: "var(--text-muted)", marginTop: -2, textTransform: "capitalize" }}>
+          {ago}
         </div>
       )}
     </div>

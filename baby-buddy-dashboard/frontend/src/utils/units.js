@@ -12,7 +12,7 @@ export function useUnits() {
   return labels[system] || labels.metric;
 }
 
-export function formatVolume(value, system = "metric") {
+export function formatVolume(value, system = "imperial") {
   const amount = Number(value || 0);
   if (system === "imperial") return `${(amount / 29.5735).toFixed(amount < 30 ? 1 : 0)} oz`;
   if (amount >= 1000) return `${(amount / 1000).toFixed(amount >= 10000 ? 1 : 2).replace(/\.0+$/, "")} L`;

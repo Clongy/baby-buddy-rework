@@ -91,6 +91,8 @@ export default {
   "time.minutesAgo": ({ count }) => `${count} min ago`,
   "time.hoursAgo": ({ count }) => `${count} h ago`,
   "time.daysAgo": ({ count }) => `${count} d ago`,
+  "time.hoursMinutesAgo": ({ countHours, countMinutes }) => `${countHours} h, ${countMinutes} min ago`,
+  "time.daysHoursMinutesAgo": ({ countDays, countHours, countMinutes }) => `${countDays} d, ${countHours} h, ${countMinutes} min ago`,
 
   "settings.title": "Tile settings",
   "settings.overview.feedingSummary": "Feeding summary",
