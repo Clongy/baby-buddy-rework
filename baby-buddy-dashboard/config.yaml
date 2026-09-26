@@ -1,6 +1,6 @@
 name: "Baby Buddy Dashboard Rework Clongy"
 version: "1.6.2"
-slug: "baby-buddy-dashboard"
+slug: "baby-buddy-dashboard-clongy"
 description: "Modern dashboard for Baby Buddy with charts, timers, and quick-log actions.
               Supports running as a standalone web app or as a Home Assistant add-on.
               It connects to your Baby Buddy instance using its API and provides a user-friendly interface to track your baby's activities and milestones."
