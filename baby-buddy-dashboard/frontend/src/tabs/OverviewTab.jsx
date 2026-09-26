@@ -31,7 +31,7 @@ import {
 } from "../utils/formatters";
 import { useUnits, formatVolume } from "../utils/units";
 import { useLanguage } from "../utils/i18n";
-import { measurableFeedingAmount } from "../utils/feedings";\
+import { measurableFeedingAmount } from "../utils/feedings";
 
 const COLLAPSED_COUNT = 2;
 
