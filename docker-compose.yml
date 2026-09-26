@@ -4,7 +4,7 @@ services:
     profiles:
       - full
     environment:
-      - TZ=${TZ:-America/New_York}
+      - TZ=${TZ:-America/Chicago}
     volumes:
       - babybuddy_data:/config
     ports:

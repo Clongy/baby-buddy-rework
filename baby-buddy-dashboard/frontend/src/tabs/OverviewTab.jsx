@@ -31,7 +31,7 @@ import {
 } from "../utils/formatters";
 import { useUnits, formatVolume } from "../utils/units";
 import { useLanguage } from "../utils/i18n";
-import { measurableFeedingAmount } from "../utils/feedings";
+import { measurableFeedingAmount } from "../utils/feedings";\
 
 const COLLAPSED_COUNT = 2;
 
@@ -125,6 +125,7 @@ export default function OverviewTab({ feedings, weeklyFeedings: weeklyFeedingsRa
             label={t("activity.feeding")}
             value={hasFeedingVolume ? formatVolume(totalFeeding) : `${feedings.length}`}
             sub={t("overview.feedingsCount", { count: feedings.length })}
+            ago={`Last feeding ${feedingTimeline[0].detail}`}
             color={colors.feeding}
           />
          </div>) : null}
@@ -134,6 +135,7 @@ export default function OverviewTab({ feedings, weeklyFeedings: weeklyFeedingsRa
             label={t("activity.sleep")}
             value={`${totalSleep.toFixed(1)} ${t("unit.hourShort")}`}
             sub={t("common.thisPeriod")}
+            ago={`Woke up ${sleepBlocks[0].detail}`}
             color={colors.sleep}
           />
         </div>) : null}
@@ -230,7 +232,7 @@ export default function OverviewTab({ feedings, weeklyFeedings: weeklyFeedingsRa
                     <TimelineItem
                       time={`${s.start}–${s.end}`}
                       label={`${s.duration.toFixed(1)} ${t("unit.hourShort")}${s.nap ? ` · ${t("overview.nap")}` : ""}`}
-                      detail={`${s.start} ${t("common.at")} ${s.end}`}
+                      detail={`${s.detail} | ${s.start} ${t("common.at")} ${s.end}`}
                       color={colors.sleep}
                       isLast={i === arr.length - 1}
                     />

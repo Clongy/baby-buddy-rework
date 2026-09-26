@@ -31,9 +31,9 @@ export function timeAgo(dateStr, language = "fr") {
   if (mins < 1) return translate("time.now", {}, language);
   if (mins < 60) return translate("time.minutesAgo", { count: mins }, language);
   const hours = Math.floor(mins / 60);
-  if (hours < 24) return translate("time.hoursAgo", { count: hours }, language);
+  if (hours < 24) return translate("time.hoursMinutesAgo", { countHours: hours, countMinutes: mins % 60 }, language);
   const days = Math.floor(hours / 24);
-  return translate("time.daysAgo", { count: days }, language);
+  return translate("time.daysHoursMinutesAgo", { countDays: days, countHours: hours % 24, countMinutes: mins % 60 }, language);
 }
 
 export function formatTime(dateStr, language = "fr") {
@@ -147,6 +147,7 @@ export function toSleepBlocks(sleepEntries, language = "fr") {
     start: formatTime(s.start, language),
     end: s.end ? formatTime(s.end, language) : translate("common.ongoing", {}, language),
     duration: parseDuration(s.duration),
+    detail: timeAgo(s.end || s.start, language),
     nap: s.nap,
     entry: s,
   }));
